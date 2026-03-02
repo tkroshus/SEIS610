@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RxJS DataStream</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/rxjs/7.8.1/rxjs.umd.min.js"></script>
+</head>
+<body>
+    <h1>RxJS DataStream</h1>
+    
+    <script>
+        // RxJS is now available as window.rxjs
+        const { of, interval } = window.rxjs;
+        
+        // Example usage
+        of(1, 2, 3).subscribe(value => console.log(value));
+
+        // Create an array of 10 random books with actual titles and authors
+        const books = Array.from({ length: 10 }, (_, i) => {
+            const titles = ["The Midnight Library", "Dune", "Project Hail Mary", "The Seven Husbands of Evelyn Hugo", "Atomic Habits", "The Silent Patient", "Educated", "Piranesi", "The Thursday Murder Club", "Klara and the Sun"];
+            const authors = ["Matt Haig", "Frank Herbert", "Andy Weir", "Taylor Jenkins Reid", "James Clear", "Alex Michaelides", "Tara Westover", "Susanna Clarke", "Richard Osman", "Kazuo Ishiguro"];
+            const years = [2020, 1965, 2021, 2017, 2018, 2019, 2018, 2020, 2020, 2021];
+            return {
+            id: i + 1,
+            title: titles[i],
+            author: authors[i],
+            year: years[i]
+            };
+        });
+
+        // Create an observable that emits the books one by one
+        const bookStream = window.rxjs.from(books);
+
+        // Filter for book titles with 3 words or less
+        // Subscribe and display results in the console and on html page
+        const resultsDiv = document.createElement('div');
+        resultsDiv.innerHTML = '<h2>Book Titles with 3 Words or Less - filter()</h2>';
+        document.body.appendChild(resultsDiv);
+
+        bookStream.pipe(
+            window.rxjs.filter(book => book.title.split(' ').length <= 3)
+        ).subscribe(book => {
+            const p = document.createElement('p');
+            p.textContent = `${book.title} by ${book.author} (${book.year})`;
+            resultsDiv.appendChild(p);
+            console.log(`${book.title} by ${book.author} (${book.year})`);
+        });
+        
+
+        // Map and transform the book objects to a simpler format
+        const resultsDiv2 = document.createElement('div');
+        resultsDiv2.innerHTML = '<br></br><h2>Transformed Book Data - map()</h2>';
+        document.body.appendChild(resultsDiv2);
+        
+        const transformedStream = bookStream.pipe(
+            window.rxjs.map(book => {
+            const [firstName, ...lastNameParts] = book.author.split(' ');
+            const firstInitial = firstName.charAt(0);
+            const lastName = lastNameParts.join(' ');
+            
+            return {
+                name: book.title,
+                creator: `${firstInitial}. ${lastName}`,
+                published: book.year
+            };
+            })
+        );
+
+        transformedStream.subscribe(transformedBook => {
+            const p = document.createElement('p');
+            p.textContent = `${transformedBook.name} by ${transformedBook.creator} (${transformedBook.published})`;
+            resultsDiv2.appendChild(p);
+            console.log('Transformed:', transformedBook);
+        });
+
+        // use pipe with take() to limit output to first 5 books
+        const resultsDiv3 = document.createElement('div');
+        resultsDiv3.innerHTML = '<br></br><h2>First 5 Books - take()</h2>';
+        document.body.appendChild(resultsDiv3);
+
+        bookStream.pipe(
+            window.rxjs.take(5)
+        ).subscribe(book => {
+            const p = document.createElement('p');
+            p.textContent = `${book.title} by ${book.author} (${book.year})`;
+            resultsDiv3.appendChild(p);
+        });
+
+        // use tap to log each book title without modifying the stream
+        const resultsDiv4 = document.createElement('div');
+        resultsDiv4.innerHTML = '<br></br><h2>Book Titles - tap()</h2>';
+        document.body.appendChild(resultsDiv4);
+
+        bookStream.pipe(
+            window.rxjs.tap(book => {
+                const p = document.createElement('p');
+                p.textContent = book.title;
+                resultsDiv4.appendChild(p);
+            })
+        ).subscribe(book => {
+            console.log(book.title);
+        });
+
+        // subscribe to all the above and display results in the console
+        bookStream.subscribe(book => {
+            console.log('Book Stream:', book);
+        });
+
+    </script>
+</body>
+</html>
